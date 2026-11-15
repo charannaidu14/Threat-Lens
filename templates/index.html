@@ -1,0 +1,1863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ThreatLens — Instant heuristic analysis of any URL for phishing indicators. Explainable, privacy-first, no data stored." />
+  <meta name="theme-color" content="#080c16" />
+  <meta name="color-scheme" content="dark" />
+  <title>ThreatLens — Phishing URL Detector</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}" />
+  <!-- ThreatLens icon: eye with crosshair lens -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><defs><linearGradient id='g' x1='0' y1='0' x2='32' y2='32'><stop offset='0' stop-color='%2300e5ff'/><stop offset='1' stop-color='%238b5cf6'/></linearGradient></defs><ellipse cx='16' cy='16' rx='14' ry='9' stroke='url(%23g)' stroke-width='2' fill='none'/><circle cx='16' cy='16' r='5' fill='url(%23g)'/><circle cx='16' cy='16' r='2' fill='%23080c16'/><line x1='16' y1='2' x2='16' y2='7' stroke='url(%23g)' stroke-width='1.5'/><line x1='16' y1='25' x2='16' y2='30' stroke='url(%23g)' stroke-width='1.5'/><line x1='2' y1='16' x2='7' y2='16' stroke='url(%23g)' stroke-width='1.5'/><line x1='25' y1='16' x2='30' y2='16' stroke='url(%23g)' stroke-width='1.5'/></svg>" />
+</head>
+<body class="db-body">
+
+<a href="#scanner" class="skip-link">Skip to URL scanner</a>
+
+<!-- ═══════════════════════════════════════════════════
+     SIDEBAR
+════════════════════════════════════════════════════ -->
+<aside class="db-sidebar" id="db-sidebar" aria-label="Main navigation">
+
+  <div class="db-sidebar__logo">
+    <span class="db-sidebar__shield" aria-hidden="true">
+      <!-- ThreatLens: eye with crosshair -->
+      <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+        <defs>
+          <linearGradient id="sb-g1" x1="0" y1="0" x2="32" y2="32">
+            <stop stop-color="#00e5ff"/>
+            <stop offset="1" stop-color="#8b5cf6"/>
+          </linearGradient>
+        </defs>
+        <ellipse cx="16" cy="16" rx="13" ry="8.5" stroke="url(#sb-g1)" stroke-width="1.8" fill="none"/>
+        <circle cx="16" cy="16" r="5.5" fill="url(#sb-g1)"/>
+        <circle cx="16" cy="16" r="2.2" fill="#04060d"/>
+        <line x1="16" y1="2" x2="16" y2="6.5" stroke="url(#sb-g1)" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="16" y1="25.5" x2="16" y2="30" stroke="url(#sb-g1)" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="2" y1="16" x2="6.5" y2="16" stroke="url(#sb-g1)" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="25.5" y1="16" x2="30" y2="16" stroke="url(#sb-g1)" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </span>
+    <div class="db-sidebar__logo-text">
+      <span class="db-sidebar__brand">Threat<span class="db-accent">Lens</span></span>
+      <span class="db-sidebar__tagline">See Every Threat. Clearly.</span>
+    </div>
+  </div>
+
+  <p class="db-nav-section">Main Menu</p>
+  <nav class="db-sidebar__nav" aria-label="Dashboard navigation">
+
+    <a href="#dashboard" class="db-nav-item db-nav-item--active" data-section="dashboard">
+      <svg class="db-nav-item__icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <rect x=".75" y=".75" width="6" height="6" rx="1.2" stroke="currentColor" stroke-width="1.5"/>
+        <rect x="9.25" y=".75" width="6" height="6" rx="1.2" stroke="currentColor" stroke-width="1.5"/>
+        <rect x=".75" y="9.25" width="6" height="6" rx="1.2" stroke="currentColor" stroke-width="1.5"/>
+        <rect x="9.25" y="9.25" width="6" height="6" rx="1.2" stroke="currentColor" stroke-width="1.5"/>
+      </svg>
+      Dashboard
+    </a>
+
+    <a href="#scanner" class="db-nav-item" data-section="scanner">
+      <svg class="db-nav-item__icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M10.5 10.5L14.5 14.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      Scan URL
+      <span class="db-nav-badge">Live</span>
+    </a>
+
+    <a href="#recent-scans-hd" class="db-nav-item" data-section="recent-scans-hd">
+      <svg class="db-nav-item__icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M8 5v4l2.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      History
+      <span class="db-nav-count" id="nav-scan-count" aria-label="Total scans this session">0</span>
+    </a>
+
+    <a href="#analytics" class="db-nav-item" data-section="analytics">
+      <svg class="db-nav-item__icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M2 12l4-4 3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Analytics
+    </a>
+
+    <a href="#threat-intel" class="db-nav-item" data-section="threat-intel">
+      <svg class="db-nav-item__icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M8 1L1.5 4.2V9c0 4 2.8 6.7 6.5 7.5C11.7 15.7 14.5 13 14.5 9V4.2L8 1Z" stroke="currentColor" stroke-width="1.5"/>
+      </svg>
+      Threat Intel
+    </a>
+
+    <a href="#how-it-works" class="db-nav-item" data-section="how-it-works">
+      <svg class="db-nav-item__icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M8 5v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M5 2.5l1 1M11 2.5l-1 1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+      How It Works
+    </a>
+
+    <a href="#sec-toolkit" class="db-nav-item" data-section="sec-toolkit">
+      <svg class="db-nav-item__icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <rect x="1" y="4" width="10" height="8" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M11 7h2.5a1 1 0 011 1v0a1 1 0 01-1 1H11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M4 8h4M4 10h2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+      </svg>
+      Security Toolkit
+    </a>
+
+  </nav>
+
+  <div class="db-sidebar__promo">
+    <div class="db-sidebar__promo-icon" aria-hidden="true">
+      <svg width="40" height="40" viewBox="0 0 48 56" fill="none">
+        <path d="M24 0L0 9.6V28C0 41.6 10 52 24 56C38 52 48 41.6 48 28V9.6L24 0Z" fill="url(#sb-promo-g)"/>
+        <path d="M15 28l6 6 12-12" stroke="#080c16" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <defs>
+          <linearGradient id="sb-promo-g" x1="0" y1="0" x2="48" y2="56">
+            <stop stop-color="#00e5ff"/><stop offset="1" stop-color="#8b5cf6"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+    <p class="db-sidebar__promo-title">Advanced Threat Analysis — See Every Phishing URL Clearly</p>
+  </div>
+  <div class="db-sidebar__footer">
+    <div class="db-sidebar__status">
+      <div>
+        <div class="db-sidebar__status-dot"></div>
+      </div>
+      <div>
+        <p class="db-sidebar__status-text">System Online</p>
+        <p class="db-sidebar__status-sub">17 rules · Real-time</p>
+      </div>
+    </div>
+  </div>
+
+  <button class="db-sidebar__close" id="db-sidebar-close" aria-label="Close sidebar">✕</button>
+</aside>
+
+<!-- ═══════════════════════════════════════════════════
+     MAIN
+════════════════════════════════════════════════════ -->
+<div class="db-main">
+
+  <!-- TOP BAR -->
+  <header class="db-topbar" role="banner">
+    <button class="db-topbar__burger" id="db-burger" aria-label="Open menu" aria-expanded="false" aria-controls="db-sidebar">
+      <span></span><span></span><span></span>
+    </button>
+
+    <div class="db-topbar__brand">
+      <span class="db-topbar__brand-icon" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
+          <defs>
+            <linearGradient id="tb-g1" x1="0" y1="0" x2="32" y2="32">
+              <stop stop-color="#00e5ff"/>
+              <stop offset="1" stop-color="#8b5cf6"/>
+            </linearGradient>
+          </defs>
+          <ellipse cx="16" cy="16" rx="13" ry="8.5" stroke="url(#tb-g1)" stroke-width="1.8" fill="none"/>
+          <circle cx="16" cy="16" r="5.5" fill="url(#tb-g1)"/>
+          <circle cx="16" cy="16" r="2.2" fill="#04060d"/>
+          <line x1="16" y1="2" x2="16" y2="6.5" stroke="url(#tb-g1)" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="16" y1="25.5" x2="16" y2="30" stroke="url(#tb-g1)" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="2" y1="16" x2="6.5" y2="16" stroke="url(#tb-g1)" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="25.5" y1="16" x2="30" y2="16" stroke="url(#tb-g1)" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </span>
+      Threat<span class="db-accent">Lens</span>
+    </div>
+
+    <div class="db-topbar__breadcrumb">
+      <span class="db-topbar__breadcrumb-sep">›</span>
+      <span class="db-topbar__breadcrumb-cur">Threat Analysis Dashboard</span>
+    </div>
+
+    <div class="db-topbar__actions">
+      <span class="db-topbar__pill">
+        <span class="db-topbar__pill-dot" aria-hidden="true"></span>
+        All Systems Online
+      </span>
+      <span class="db-topbar__version">v2.0</span>
+    </div>
+  </header>
+
+  <!-- SCROLL CONTENT -->
+  <div class="db-scroll" id="dashboard">
+
+    <!-- ── PAGE HEADER ── -->
+    <div class="db-page-header">
+      <div>
+        <h1 class="db-page-header__title">ThreatLens Dashboard</h1>
+        <p class="db-page-header__sub">Detect phishing URLs with 17 heuristic rules — explainable, real-time, privacy-first.</p>
+      </div>
+      <span class="db-page-header__badge">
+        <svg width="10" height="10" viewBox="0 0 14 16" fill="none" aria-hidden="true">
+          <path d="M7 0L0 2.8V8C0 12.2 3 15.2 7 16C11 15.2 14 12.2 14 8V2.8L7 0Z" fill="currentColor"/>
+        </svg>
+        17 Rules Active
+      </span>
+    </div>
+
+    <!-- ── STAT CARDS ── -->
+    <div class="db-stats-row" aria-label="Session scan statistics">
+
+      <div class="db-stat-card db-stat-card--total">
+        <div class="db-stat-card__top">
+          <div class="db-stat-card__icon db-stat-card__icon--blue" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L2 7v10c0 6 4.5 10 10 11 5.5-1 10-5 10-11V7L12 2Z" stroke="currentColor" stroke-width="1.8"/>
+            </svg>
+          </div>
+          <div class="db-stat-card__body">
+            <span class="db-stat-card__lbl">Total Scans</span>
+            <span class="db-stat-card__val" id="stat-total">0</span>
+          </div>
+        </div>
+        <div class="db-stat-card__footer">
+          <span class="db-stat-card__delta db-stat-card__delta--up" id="stat-total-delta">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M5 8V2M2 5l3-3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            This session
+          </span>
+          <canvas class="db-stat-spark" id="spark-total" width="90" height="32" aria-hidden="true"></canvas>
+        </div>
+      </div>
+
+      <div class="db-stat-card db-stat-card--safe">
+        <div class="db-stat-card__top">
+          <div class="db-stat-card__icon db-stat-card__icon--green" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M8 12l3 3 5-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="db-stat-card__body">
+            <span class="db-stat-card__lbl">Safe Links</span>
+            <span class="db-stat-card__val" id="stat-safe">0</span>
+          </div>
+        </div>
+        <div class="db-stat-card__footer">
+          <span class="db-stat-card__delta db-stat-card__delta--up" id="stat-safe-delta">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M5 8V2M2 5l3-3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            This session
+          </span>
+          <canvas class="db-stat-spark" id="spark-safe" width="90" height="32" aria-hidden="true"></canvas>
+        </div>
+      </div>
+
+      <div class="db-stat-card db-stat-card--suspicious">
+        <div class="db-stat-card__top">
+          <div class="db-stat-card__icon db-stat-card__icon--amber" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M12 3L2 20h20L12 3Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+              <path d="M12 9v5M12 17v.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="db-stat-card__body">
+            <span class="db-stat-card__lbl">Phishing Detected</span>
+            <span class="db-stat-card__val" id="stat-suspicious">0</span>
+          </div>
+        </div>
+        <div class="db-stat-card__footer">
+          <span class="db-stat-card__delta db-stat-card__delta--down" id="stat-suspicious-delta">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M5 2v6M8 5l-3 3-3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            This session
+          </span>
+          <canvas class="db-stat-spark" id="spark-suspicious" width="90" height="32" aria-hidden="true"></canvas>
+        </div>
+      </div>
+
+      <div class="db-stat-card db-stat-card--dangerous">
+        <div class="db-stat-card__top">
+          <div class="db-stat-card__icon db-stat-card__icon--red" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M12 8v5M12 16v.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="db-stat-card__body">
+            <span class="db-stat-card__lbl">Avg. Scan Time</span>
+            <span class="db-stat-card__val" id="stat-dangerous">0</span>
+          </div>
+        </div>
+        <div class="db-stat-card__footer">
+          <span class="db-stat-card__delta db-stat-card__delta--down" id="stat-dangerous-delta">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M5 2v6M8 5l-3 3-3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            This session
+          </span>
+          <canvas class="db-stat-spark" id="spark-dangerous" width="90" height="32" aria-hidden="true"></canvas>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── SCANNER PANEL ── -->
+    <section class="db-scanner-panel" id="scanner" aria-labelledby="scanner-title">
+      <canvas id="hero-canvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;" aria-hidden="true"></canvas>
+
+      <div class="db-scanner-inner">
+
+        <!-- Left: form -->
+        <div class="db-scanner-left">
+          <div class="db-scanner-label">
+            <span class="db-scanner-label__icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <circle cx="11" cy="11" r="7" stroke="#00e5ff" stroke-width="1.8"/>
+                <path d="M16.5 16.5L21 21" stroke="#00e5ff" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+            </span>
+            <span class="db-scanner-label__title" id="scanner-title">URL Threat Scanner</span>
+            <span class="db-scanner-label__badge">17 Rules</span>
+          </div>
+
+          <form id="analyze-form" class="db-scan-form" novalidate aria-label="URL analysis form">
+            <div class="db-scan-form__row" id="input-row">
+              <span class="db-scan-form__prefix" aria-hidden="true">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+                  <path d="M6.5 9.5a3.536 3.536 0 005 0l2-2a3.536 3.536 0 00-5-5l-1 1" stroke="#475569" stroke-width="1.5" stroke-linecap="round"/>
+                  <path d="M9.5 6.5a3.536 3.536 0 00-5 0l-2 2a3.536 3.536 0 005 5l1-1" stroke="#475569" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </span>
+              <input
+                type="url"
+                id="url-input"
+                class="db-scan-form__input"
+                name="url"
+                placeholder="https://example.com/path?query=value"
+                autocomplete="off"
+                autocapitalize="none"
+                spellcheck="false"
+                aria-label="URL to analyze"
+                aria-describedby="url-hint url-error"
+                aria-invalid="false"
+                maxlength="2083"
+              />
+              <button type="button" id="clear-btn" class="db-scan-form__clear" aria-label="Clear URL" hidden>
+                <svg width="11" height="11" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                  <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+              </button>
+              <button type="submit" id="submit-btn" class="db-scan-btn" aria-label="Analyze URL">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M12 2L2 7v10c0 6 4.5 10 10 11 5.5-1 10-5 10-11V7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                </svg>
+                <span class="btn-text">Scan URL</span>
+                <span class="btn-spinner" aria-hidden="true"></span>
+              </button>
+            </div>
+            <div class="db-scan-form__hint-row">
+              <p id="url-hint" class="db-scan-form__hint">
+                Supports <code>http://</code> and <code>https://</code> — URLs are never visited or stored.
+              </p>
+              <span class="db-scan-form__shortcut" aria-hidden="true">
+                <kbd>Ctrl</kbd>+<kbd>Enter</kbd>
+              </span>
+            </div>
+            <p id="url-error" class="db-scan-form__error" role="alert" aria-live="polite" hidden></p>
+          </form>
+
+          <div class="db-samples" aria-labelledby="db-samples-lbl">
+            <span id="db-samples-lbl" class="db-samples__label">Try:</span>
+            <div class="db-samples__grid" role="list">
+              {% for sample in sample_urls %}
+              <button
+                class="db-sample db-sample--{{ sample.risk }}"
+                data-url="{{ sample.url }}"
+                type="button"
+                role="listitem"
+                aria-label="Load sample: {{ sample.label }}"
+              >
+                <span class="sample__dot" aria-hidden="true"></span>
+                <span class="sample__text">{{ sample.label }}</span>
+              </button>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: engine info -->
+        <div class="db-scanner-right">
+          <div class="db-scanner-info">
+            <p class="db-scanner-info__title">Engine Status</p>
+            <div class="db-scanner-info__row">
+              <span class="db-scanner-info__dot db-scanner-info__dot--green" aria-hidden="true"></span>
+              No URL fetching
+            </div>
+            <div class="db-scanner-info__row">
+              <span class="db-scanner-info__dot db-scanner-info__dot--cyan" aria-hidden="true"></span>
+              17 heuristic rules
+            </div>
+            <div class="db-scanner-info__row">
+              <span class="db-scanner-info__dot db-scanner-info__dot--green" aria-hidden="true"></span>
+              Zero data storage
+            </div>
+            <div class="db-scanner-info__row">
+              <span class="db-scanner-info__dot db-scanner-info__dot--cyan" aria-hidden="true"></span>
+              0–100 risk score
+            </div>
+            <div class="db-scanner-info__row">
+              <span class="db-scanner-info__dot db-scanner-info__dot--amber" aria-hidden="true"></span>
+              Rate limited API
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ── RESULTS AREA (all IDs preserved) ── -->
+    <div id="results-area" aria-live="polite" aria-atomic="false" class="db-results-area">
+
+      <!-- Loading -->
+      <div id="state-loading" class="state state--loading db-state-panel" hidden aria-label="Analyzing, please wait">
+        <div class="scan-anim" aria-hidden="true">
+          <div class="scan-anim__ring scan-anim__ring--1"></div>
+          <div class="scan-anim__ring scan-anim__ring--2"></div>
+          <div class="scan-anim__ring scan-anim__ring--3"></div>
+          <span class="scan-anim__icon">🛡️</span>
+        </div>
+        <p class="loading__title">Scanning URL…</p>
+        <div class="loading__steps" aria-hidden="true">
+          <span class="loading__step" data-step="0">Parsing structure</span>
+          <span class="loading__step" data-step="1">Checking domain</span>
+          <span class="loading__step" data-step="2">Running 17 rules</span>
+          <span class="loading__step" data-step="3">Calculating score</span>
+        </div>
+      </div>
+
+      <!-- Error -->
+      <div id="state-error" class="state state--error card db-state-panel" hidden role="alert">
+        <div class="state__icon-wrap state__icon-wrap--error" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <path d="M14 8v7M14 18.5v.5" stroke="#ef4444" stroke-width="2.2" stroke-linecap="round"/>
+            <circle cx="14" cy="14" r="11" stroke="#ef4444" stroke-width="1.8"/>
+          </svg>
+        </div>
+        <h3 class="state__title">Analysis Failed</h3>
+        <p id="error-message" class="state__body"></p>
+        <button type="button" class="btn btn--ghost state__retry" id="retry-btn">Try Again</button>
+      </div>
+
+      <!-- Result -->
+      <div id="state-result" class="state state--result" hidden>
+
+        <div class="result-score card" aria-labelledby="result-heading">
+          <div class="result-score__inner">
+            <div class="ring-wrap" aria-label="Risk score visualization">
+              <svg class="ring-svg" viewBox="0 0 120 120" aria-hidden="true">
+                <circle class="ring-track" cx="60" cy="60" r="50"/>
+                <circle id="score-ring-fill" class="ring-fill" cx="60" cy="60" r="50"
+                  stroke-dasharray="314.16" stroke-dashoffset="314.16"
+                  transform="rotate(-90 60 60)"/>
+              </svg>
+              <div class="ring-center">
+                <span id="result-score" class="ring-score">0</span>
+                <span class="ring-denom">/100</span>
+              </div>
+            </div>
+            <div class="result-score__meta">
+              <span id="result-risk-badge" class="risk-badge">—</span>
+              <h3 id="result-heading" class="result-url" aria-label="Analysed URL"></h3>
+              <p id="result-summary" class="result-summary"></p>
+              <div class="result-score__bar-wrap" aria-hidden="true">
+                <div class="result-score__bar">
+                  <div id="result-bar-fill" class="result-score__bar-fill"></div>
+                </div>
+                <span id="result-bar-label" class="result-score__bar-label"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card indicators" aria-labelledby="ind-heading">
+          <div class="indicators__hd">
+            <h3 id="ind-heading" class="card__title">
+              <svg width="17" height="17" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                <rect x="1" y="1" width="16" height="16" rx="3" stroke="url(#ind-g1)" stroke-width="1.6"/>
+                <path d="M5 9l2.5 2.5L13 6" stroke="url(#ind-g1)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                <defs><linearGradient id="ind-g1" x1="0" y1="0" x2="18" y2="18"><stop stop-color="#00e5ff"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs>
+              </svg>
+              Detection Indicators
+            </h3>
+            <span id="ind-summary-badge" class="ind-count-badge" aria-label="Triggered rules"></span>
+          </div>
+          <p class="card__sub">Each rule is evaluated independently. Triggered indicators add to the risk score.</p>
+          <div id="indicators-grid" class="ind-grid" role="list"></div>
+        </div>
+
+        <div class="card recs" aria-labelledby="recs-heading">
+          <h3 id="recs-heading" class="card__title">
+            <svg width="17" height="17" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+              <path d="M9 1l2 5.5h5.5L12 10l1.5 5.5L9 13l-4.5 2.5L6 10 1.5 6.5H7L9 1Z" stroke="url(#rec-g1)" stroke-width="1.5" stroke-linejoin="round"/>
+              <defs><linearGradient id="rec-g1" x1="0" y1="0" x2="18" y2="18"><stop stop-color="#00e5ff"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs>
+            </svg>
+            Recommendations
+          </h3>
+          <ul id="recommendations-list" class="recs__list" role="list"></ul>
+        </div>
+
+        <div class="disclaimer" role="note" aria-label="Disclaimer">
+          <svg class="disclaimer__icon" width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <circle cx="8" cy="8" r="6.5" stroke="#8b5cf6" stroke-width="1.4"/>
+            <path d="M8 7v4M8 5.5v.5" stroke="#8b5cf6" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+          <p id="result-disclaimer" class="disclaimer__text"></p>
+        </div>
+
+        <div class="result-actions">
+          <button type="button" id="analyze-another-btn" class="btn btn--ghost">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+              <path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Analyze Another URL
+          </button>
+          <button type="button" id="result-copy-btn" class="btn btn--ghost btn--action-copy" aria-label="Copy scan result to clipboard">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M8 17H5a2 2 0 01-2-2V5a2 2 0 012-2h10a2 2 0 012 2v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              <rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="1.8"/>
+            </svg>
+            Copy Result
+          </button>
+          <button type="button" id="result-download-btn" class="btn btn--ghost btn--action-download" aria-label="Download scan report as text file">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 4v12M8 12l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M4 20h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+            Download Report
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── ANALYTICS ROW ── -->
+    <div class="db-section-hd" id="analytics">
+      <span class="db-section-hd__title">Analytics</span>
+      <span class="db-section-hd__line" aria-hidden="true"></span>
+    </div>
+
+    <!-- 4-panel analytics row: scan chart | threat types | protection status | live threat intel -->
+    <div class="db-analytics-row">
+
+      <!-- Scan Results Overview chart -->
+      <div class="db-panel db-panel--chart" aria-labelledby="scan-chart-title">
+        <div class="db-panel__hd">
+          <span class="db-panel__hd-icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M3 18l5-8 4 5 4-6 5 9" stroke="#00e5ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <h2 class="db-panel__title" id="scan-chart-title">Scan Results Overview</h2>
+          <span class="db-panel__badge" aria-label="Last 7 days">Last 7 Days</span>
+        </div>
+        <div class="db-chart-legend">
+          <span class="db-chart-legend__item db-chart-legend__item--safe">
+            <span class="db-chart-legend__dot"></span>Safe
+          </span>
+          <span class="db-chart-legend__item db-chart-legend__item--phish">
+            <span class="db-chart-legend__dot"></span>Phishing
+          </span>
+        </div>
+        <div class="db-chart-wrap" aria-hidden="true">
+          <canvas id="db-overview-chart" class="db-overview-canvas"></canvas>
+          <div class="db-chart-yaxis" aria-hidden="true">
+            <span>80</span><span>60</span><span>40</span><span>20</span><span>0</span>
+          </div>
+          <div class="db-chart-xaxis" aria-hidden="true">
+            <span>Oct 12</span><span>Oct 13</span><span>Oct 14</span><span>Oct 15</span><span>Oct 16</span><span>Oct 17</span><span>Oct 18</span>
+          </div>
+        </div>
+        <!-- Hidden sparkline (original — preserved for JS) -->
+        <canvas class="db-sparkline" id="db-sparkline" width="260" height="60" style="display:none" aria-hidden="true"></canvas>
+      </div>
+
+      <!-- Threat Types donut -->
+      <div class="db-panel db-panel--threat-types" aria-labelledby="threat-types-title">
+        <div class="db-panel__hd">
+          <span class="db-panel__hd-icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="9" stroke="#ef4444" stroke-width="1.8"/>
+              <path d="M12 8v5M12 16v.5" stroke="#ef4444" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <h2 class="db-panel__title" id="threat-types-title">Threat Types</h2>
+        </div>
+        <div class="db-threat-body">
+          <div class="db-donut-wrap" aria-label="Threat distribution">
+            <svg class="db-donut" viewBox="0 0 120 120" aria-hidden="true">
+              <circle class="db-donut__track" cx="60" cy="60" r="46"/>
+              <circle class="db-donut__safe"   id="donut-safe"   cx="60" cy="60" r="46" stroke-dasharray="289.03" stroke-dashoffset="289.03" transform="rotate(-90 60 60)"/>
+              <circle class="db-donut__medium" id="donut-medium" cx="60" cy="60" r="46" stroke-dasharray="289.03" stroke-dashoffset="289.03" transform="rotate(-90 60 60)"/>
+              <circle class="db-donut__high"   id="donut-high"   cx="60" cy="60" r="46" stroke-dasharray="289.03" stroke-dashoffset="289.03" transform="rotate(-90 60 60)"/>
+            </svg>
+            <div class="db-donut__center">
+              <span class="db-donut__pct" id="donut-pct">0</span>
+              <span class="db-donut__label">Total Threats</span>
+              <span class="db-donut__badge" id="donut-badge">—</span>
+            </div>
+          </div>
+          <div class="db-threat-legend">
+            <div class="db-legend-row">
+              <span class="db-legend-dot db-legend-dot--safe" aria-hidden="true"></span>
+              <span class="db-legend-lbl">Safe</span>
+              <span class="db-legend-val" id="legend-safe">0</span>
+              <span class="db-legend-pct" id="legend-safe-pct">0%</span>
+            </div>
+            <div class="db-legend-row">
+              <span class="db-legend-dot db-legend-dot--medium" aria-hidden="true"></span>
+              <span class="db-legend-lbl">Suspicious</span>
+              <span class="db-legend-val" id="legend-medium">0</span>
+              <span class="db-legend-pct" id="legend-medium-pct">0%</span>
+            </div>
+            <div class="db-legend-row">
+              <span class="db-legend-dot db-legend-dot--high" aria-hidden="true"></span>
+              <span class="db-legend-lbl">Dangerous</span>
+              <span class="db-legend-val" id="legend-high">0</span>
+              <span class="db-legend-pct" id="legend-high-pct">0%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Protection status + quick actions combined -->
+      <div class="db-panel db-panel--status-col">
+
+        <!-- You're Protected card -->
+        <div class="db-protected-card">
+          <div class="db-protected-card__icon" aria-hidden="true">
+            <svg width="44" height="44" viewBox="0 0 48 56" fill="none">
+              <path d="M24 0L0 9.6V28C0 41.6 10 52 24 56C38 52 48 41.6 48 28V9.6L24 0Z" fill="url(#prot-g1)"/>
+              <path d="M15 28l6 6 12-12" stroke="#080c16" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <defs>
+                <linearGradient id="prot-g1" x1="0" y1="0" x2="48" y2="56">
+                  <stop stop-color="#10b981"/><stop offset="1" stop-color="#00e5ff"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <p class="db-protected-card__title">You're Protected!</p>
+          <p class="db-protected-card__sub">No active threats detected in your system.</p>
+          <p class="db-protected-card__hint">Keep scanning to stay safe.</p>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="db-qactions-card" id="features-scanner">
+          <div class="db-qactions-card__hd">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z" stroke="#f59e0b" stroke-width="1.8" stroke-linejoin="round"/>
+            </svg>
+            <span>Quick Actions</span>
+          </div>
+          <div class="db-quick-actions">
+            <button type="button" class="db-quick-btn db-quick-btn--blue" id="qa-clear" aria-label="Clear URL input">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.8"/>
+                <path d="M10.5 10.5L14.5 14.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+              Scan URL
+              <svg class="db-quick-btn__arrow" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 6h8M6 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button type="button" class="db-quick-btn db-quick-btn--purple" id="qa-scan-history" aria-label="View scan history">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/>
+                <path d="M12 7v5l3 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+              View History
+              <svg class="db-quick-btn__arrow" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 6h8M6 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button type="button" class="db-quick-btn db-quick-btn--green" id="qa-copy" aria-label="Copy last scan result">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M8 1L1.5 4.2V9c0 4 2.8 6.7 6.5 7.5C11.7 15.7 14.5 13 14.5 9V4.2L8 1Z" stroke="currentColor" stroke-width="1.8"/>
+              </svg>
+              Threat Intelligence
+              <svg class="db-quick-btn__arrow" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 6h8M6 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button type="button" class="db-quick-btn db-quick-btn--dim" aria-label="Settings">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/>
+                <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" stroke-width="1.5"/>
+              </svg>
+              Settings
+              <svg class="db-quick-btn__arrow" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 6h8M6 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+
+          <!-- Stay One Step Ahead promo -->
+          <div class="db-promo-card">
+            <div class="db-promo-card__icon" aria-hidden="true">
+              <svg width="28" height="28" viewBox="0 0 48 56" fill="none">
+                <path d="M24 0L0 9.6V28C0 41.6 10 52 24 56C38 52 48 41.6 48 28V9.6L24 0Z" fill="url(#promo-g)"/>
+                <path d="M15 28l6 6 12-12" stroke="#080c16" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <defs>
+                  <linearGradient id="promo-g" x1="0" y1="0" x2="48" y2="56">
+                    <stop stop-color="#3b82f6"/><stop offset="1" stop-color="#8b5cf6"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+            <div class="db-promo-card__body">
+              <p class="db-promo-card__title">Stay One Step Ahead</p>
+              <p class="db-promo-card__sub">Phishing attacks are getting smarter. So are we.</p>
+            </div>
+            <a href="#how-it-works" class="db-promo-card__btn">Learn More →</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── LIVE THREAT INTELLIGENCE PANEL ── -->
+      <div class="db-panel lti-panel" id="lti-panel" aria-labelledby="lti-title">
+
+        <!-- Header -->
+        <div class="db-panel__hd lti-hd">
+          <span class="db-panel__hd-icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L2 7v10c0 6 4.5 10 10 11 5.5-1 10-5 10-11V7L12 2Z" stroke="#00e5ff" stroke-width="1.8"/>
+              <circle cx="12" cy="12" r="2.5" fill="#00e5ff"/>
+            </svg>
+          </span>
+          <h2 class="db-panel__title" id="lti-title">Live Threat Intel</h2>
+          <span class="lti-live-dot" aria-hidden="true"></span>
+          <button type="button" class="lti-refresh-btn" id="lti-refresh-btn" aria-label="Refresh threat feed">
+            <svg class="lti-refresh-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M23 4v6h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M1 20v-6h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Refresh
+          </button>
+        </div>
+
+        <!-- Source + last-updated strip -->
+        <div class="lti-meta" id="lti-meta" aria-live="polite">
+          <span class="lti-source-badge" id="lti-source-badge">—</span>
+          <span class="lti-updated" id="lti-updated">Loading…</span>
+        </div>
+
+        <!-- Summary stat chips -->
+        <div class="lti-chips" id="lti-chips" aria-label="Threat severity summary">
+          <div class="lti-chip lti-chip--critical">
+            <span class="lti-chip__val" id="lti-count-critical">—</span>
+            <span class="lti-chip__lbl">Critical</span>
+          </div>
+          <div class="lti-chip lti-chip--high">
+            <span class="lti-chip__val" id="lti-count-high">—</span>
+            <span class="lti-chip__lbl">High</span>
+          </div>
+          <div class="lti-chip lti-chip--medium">
+            <span class="lti-chip__val" id="lti-count-medium">—</span>
+            <span class="lti-chip__lbl">Medium</span>
+          </div>
+        </div>
+
+        <!-- Feed states -->
+        <div class="lti-state lti-state--loading" id="lti-loading" aria-label="Loading threat data" hidden>
+          <div class="lti-spinner" aria-hidden="true">
+            <div class="lti-spinner__ring"></div>
+          </div>
+          <span>Fetching latest threats…</span>
+        </div>
+
+        <div class="lti-state lti-state--error" id="lti-error" role="alert" hidden>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" stroke="#ef4444" stroke-width="1.8"/>
+            <path d="M12 8v5M12 16v.5" stroke="#ef4444" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+          <span id="lti-error-msg">Unable to fetch threat data.</span>
+          <button type="button" class="lti-retry-btn" id="lti-retry-btn">Retry</button>
+        </div>
+
+        <div class="lti-state lti-state--empty" id="lti-empty" hidden>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,.15)" stroke-width="1.8"/>
+            <path d="M12 8v5M12 16v.5" stroke="rgba(255,255,255,.15)" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+          <span>No active threats reported.</span>
+        </div>
+
+        <!-- Activity feed list -->
+        <ul class="lti-feed" id="lti-feed" aria-label="Recent phishing threats" aria-live="polite"></ul>
+
+        <!-- Footer note -->
+        <p class="lti-footer-note">
+          <svg width="10" height="10" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <circle cx="8" cy="8" r="6.5" stroke="#8b5cf6" stroke-width="1.4"/>
+            <path d="M8 7v4M8 5.5v.5" stroke="#8b5cf6" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+          Data sourced via PhishTank public feed · Curated fallback when offline
+        </p>
+
+      </div><!-- /.lti-panel -->
+
+    </div><!-- /.db-analytics-row -->
+
+    <!-- ── RECENT SCANS TABLE ── -->
+    <div class="db-section-hd" id="recent-scans-hd">
+      <span class="db-section-hd__title">Recent Scans</span>
+      <span class="db-section-hd__line" aria-hidden="true"></span>
+      <a href="#scanner" class="db-section-hd__action">View All →</a>
+    </div>
+
+    <div class="db-panel db-panel--table" aria-labelledby="recent-table-title">
+      <div class="db-panel__hd">
+        <span class="db-panel__hd-icon" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="9" stroke="#00e5ff" stroke-width="1.8"/>
+            <path d="M12 7v5l3 3" stroke="#00e5ff" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <h2 class="db-panel__title" id="recent-table-title">Recent Scans</h2>
+        <a href="#scanner" class="db-panel__viewall">Scan new →</a>
+      </div>
+
+      <!-- Filter + export toolbar -->
+      <div class="db-table-toolbar">
+        <div class="db-filter-btns" role="group" aria-label="Filter by risk level">
+          <button type="button" class="db-filter-btn active" data-filter-risk="all">All</button>
+          <button type="button" class="db-filter-btn db-filter-btn--safe"    data-filter-risk="low">Safe</button>
+          <button type="button" class="db-filter-btn db-filter-btn--medium"  data-filter-risk="medium">Suspicious</button>
+          <button type="button" class="db-filter-btn db-filter-btn--high"    data-filter-risk="high">Dangerous</button>
+        </div>
+        <div class="db-export-btns">
+          <button type="button" class="db-export-btn" id="export-csv" aria-label="Export scan history as CSV">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 4v12M8 12l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M4 20h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+            CSV
+          </button>
+          <button type="button" class="db-export-btn" id="export-json" aria-label="Export scan history as JSON">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 4v12M8 12l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M4 20h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+            JSON
+          </button>
+        </div>
+      </div>
+
+      <!-- Table header -->
+      <div class="db-table-head" aria-hidden="true">
+        <span class="db-th db-th--num">#</span>
+        <span class="db-th db-th--url">URL</span>
+        <span class="db-th db-th--result">Result</span>
+        <span class="db-th db-th--type">Threat Type</span>
+        <span class="db-th db-th--time">Scan Time</span>
+        <span class="db-th db-th--action">Action</span>
+      </div>
+
+      <!-- Scan list (populated by dashboard-ui.js — id preserved) -->
+      <ul class="db-recent-list db-recent-table" id="db-recent-list" aria-label="Recent scan results" aria-live="polite">
+        <li class="db-recent-empty db-table-empty">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,.1)" stroke-width="1.5"/>
+            <path d="M12 7v5l3 3" stroke="rgba(255,255,255,.1)" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          No scans yet — enter a URL above to get started.
+        </li>
+      </ul>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         SECURITY TOOLKIT  — Password Strength + 2FA Checker + Headers + Session
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <div class="db-section-hd" id="sec-toolkit">
+      <span class="db-section-hd__title">Security Toolkit</span>
+      <span class="db-section-hd__line" aria-hidden="true"></span>
+      <span class="db-section-hd__tag">7 Tools · Authentication · Crypto · Email</span>
+    </div>
+
+    <div class="stk-intro">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" stroke="#00e5ff" stroke-width="1.8"/>
+        <path d="M12 8v5M12 16v.5" stroke="#00e5ff" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+      <p>These tools run <strong>entirely in your browser</strong> — nothing is sent to any server. Use them to evaluate your own security posture.</p>
+    </div>
+
+    <div class="stk-grid">
+
+      <!-- ── TOOL 1: Password Strength Analyzer ── -->
+      <div class="stk-card stk-card--password" id="stk-password" aria-labelledby="stk-pw-title">
+        <div class="stk-card__hd">
+          <span class="stk-card__hd-icon stk-icon--blue" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="11" width="18" height="11" rx="2" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M7 11V7a5 5 0 0110 0v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              <circle cx="12" cy="16" r="1.5" fill="currentColor"/>
+            </svg>
+          </span>
+          <div>
+            <h3 class="stk-card__title" id="stk-pw-title">Password Strength Analyzer</h3>
+            <p class="stk-card__sub">Real-time entropy &amp; composition analysis — no password leaves your device</p>
+          </div>
+          <span class="stk-card__badge stk-badge--client">Client-Side Only</span>
+        </div>
+
+        <div class="stk-pw-wrap">
+          <div class="stk-pw-input-row">
+            <input
+              type="password"
+              id="stk-pw-input"
+              class="stk-input"
+              placeholder="Type a password to analyze…"
+              autocomplete="new-password"
+              spellcheck="false"
+              aria-label="Password to analyze"
+              aria-describedby="stk-pw-strength-label"
+              maxlength="128"
+            />
+            <button type="button" class="stk-toggle-pw" id="stk-pw-toggle" aria-label="Toggle password visibility" aria-pressed="false">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="stk-eye-open" aria-hidden="true">
+                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" stroke="currentColor" stroke-width="1.8"/>
+                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/>
+              </svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="stk-eye-closed" style="display:none" aria-hidden="true">
+                <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19M1 1l22 22" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Strength meter bar -->
+          <div class="stk-meter-wrap" aria-hidden="true">
+            <div class="stk-meter">
+              <div class="stk-meter__fill" id="stk-pw-meter-fill"></div>
+            </div>
+            <span class="stk-meter__label" id="stk-pw-strength-label" aria-live="polite">—</span>
+          </div>
+
+          <!-- Stats grid -->
+          <div class="stk-pw-stats" id="stk-pw-stats" aria-live="polite">
+            <div class="stk-pw-stat">
+              <span class="stk-pw-stat__key">Length</span>
+              <span class="stk-pw-stat__val" id="stk-pw-len">—</span>
+            </div>
+            <div class="stk-pw-stat">
+              <span class="stk-pw-stat__key">Entropy</span>
+              <span class="stk-pw-stat__val" id="stk-pw-entropy">—</span>
+            </div>
+            <div class="stk-pw-stat">
+              <span class="stk-pw-stat__key">Uppercase</span>
+              <span class="stk-pw-stat__val" id="stk-pw-upper">—</span>
+            </div>
+            <div class="stk-pw-stat">
+              <span class="stk-pw-stat__key">Lowercase</span>
+              <span class="stk-pw-stat__val" id="stk-pw-lower">—</span>
+            </div>
+            <div class="stk-pw-stat">
+              <span class="stk-pw-stat__key">Digits</span>
+              <span class="stk-pw-stat__val" id="stk-pw-digits">—</span>
+            </div>
+            <div class="stk-pw-stat">
+              <span class="stk-pw-stat__key">Symbols</span>
+              <span class="stk-pw-stat__val" id="stk-pw-symbols">—</span>
+            </div>
+          </div>
+
+          <!-- Feedback tips -->
+          <ul class="stk-pw-tips" id="stk-pw-tips" aria-label="Password improvement tips" aria-live="polite"></ul>
+        </div>
+      </div>
+
+      <!-- ── TOOL 2: 2FA / MFA Readiness Checker ── -->
+      <div class="stk-card stk-card--2fa" id="stk-2fa" aria-labelledby="stk-2fa-title">
+        <div class="stk-card__hd">
+          <span class="stk-card__hd-icon stk-icon--violet" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L2 7v10c0 6 4.5 10 10 11 5.5-1 10-5 10-11V7L12 2Z" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <div>
+            <h3 class="stk-card__title" id="stk-2fa-title">2FA / MFA Readiness Checker</h3>
+            <p class="stk-card__sub">Audit your authentication practices against security best practices</p>
+          </div>
+          <span class="stk-card__badge stk-badge--interactive">Interactive</span>
+        </div>
+
+        <!-- Score ring -->
+        <div class="stk-2fa-header">
+          <div class="stk-score-ring" aria-label="MFA readiness score">
+            <svg viewBox="0 0 80 80" class="stk-ring-svg" aria-hidden="true">
+              <circle cx="40" cy="40" r="32" class="stk-ring-track"/>
+              <circle cx="40" cy="40" r="32" class="stk-ring-arc" id="stk-2fa-ring-arc"
+                stroke-dasharray="201.06" stroke-dashoffset="201.06"
+                transform="rotate(-90 40 40)"/>
+            </svg>
+            <div class="stk-ring-center">
+              <span class="stk-ring-val" id="stk-2fa-score">0</span>
+              <span class="stk-ring-denom">/ 10</span>
+            </div>
+          </div>
+          <div class="stk-2fa-verdict">
+            <p class="stk-2fa-verdict__label" id="stk-2fa-verdict-label">Answer the checklist →</p>
+            <p class="stk-2fa-verdict__sub" id="stk-2fa-verdict-sub">Check all that apply to your accounts</p>
+          </div>
+        </div>
+
+        <!-- Checklist -->
+        <div class="stk-checklist" role="group" aria-label="MFA security checklist">
+          <label class="stk-check-item">
+            <input type="checkbox" class="stk-check" data-weight="2" id="chk-totp" aria-describedby="chk-totp-desc"/>
+            <span class="stk-check-custom" aria-hidden="true"></span>
+            <span class="stk-check-body">
+              <span class="stk-check-lbl">I use an authenticator app (TOTP)</span>
+              <span class="stk-check-desc" id="chk-totp-desc">Google Authenticator, Authy, Aegis — time-based one-time passwords are far stronger than SMS</span>
+            </span>
+          </label>
+          <label class="stk-check-item">
+            <input type="checkbox" class="stk-check" data-weight="1" id="chk-sms" aria-describedby="chk-sms-desc"/>
+            <span class="stk-check-custom" aria-hidden="true"></span>
+            <span class="stk-check-body">
+              <span class="stk-check-lbl">I have SMS 2FA enabled (at minimum)</span>
+              <span class="stk-check-desc" id="chk-sms-desc">SMS is better than nothing — but vulnerable to SIM-swap attacks. Upgrade to TOTP when possible</span>
+            </span>
+          </label>
+          <label class="stk-check-item">
+            <input type="checkbox" class="stk-check" data-weight="2" id="chk-hwkey" aria-describedby="chk-hwkey-desc"/>
+            <span class="stk-check-custom" aria-hidden="true"></span>
+            <span class="stk-check-body">
+              <span class="stk-check-lbl">I use a hardware security key (FIDO2/WebAuthn)</span>
+              <span class="stk-check-desc" id="chk-hwkey-desc">YubiKey, Titan Key — phishing-resistant by design, the gold standard for account security</span>
+            </span>
+          </label>
+          <label class="stk-check-item">
+            <input type="checkbox" class="stk-check" data-weight="1" id="chk-backup" aria-describedby="chk-backup-desc"/>
+            <span class="stk-check-custom" aria-hidden="true"></span>
+            <span class="stk-check-body">
+              <span class="stk-check-lbl">I have saved backup / recovery codes</span>
+              <span class="stk-check-desc" id="chk-backup-desc">Stored offline in a secure location — essential if you lose your authenticator device</span>
+            </span>
+          </label>
+          <label class="stk-check-item">
+            <input type="checkbox" class="stk-check" data-weight="1" id="chk-pm" aria-describedby="chk-pm-desc"/>
+            <span class="stk-check-custom" aria-hidden="true"></span>
+            <span class="stk-check-body">
+              <span class="stk-check-lbl">I use a password manager</span>
+              <span class="stk-check-desc" id="chk-pm-desc">Bitwarden, 1Password, Dashlane — unique strong passwords per site, auto-fills only the correct domain</span>
+            </span>
+          </label>
+          <label class="stk-check-item">
+            <input type="checkbox" class="stk-check" data-weight="1" id="chk-email" aria-describedby="chk-email-desc"/>
+            <span class="stk-check-custom" aria-hidden="true"></span>
+            <span class="stk-check-body">
+              <span class="stk-check-lbl">My email account has 2FA enabled</span>
+              <span class="stk-check-desc" id="chk-email-desc">Email is the master key to all other accounts. It must always have the strongest MFA available</span>
+            </span>
+          </label>
+          <label class="stk-check-item">
+            <input type="checkbox" class="stk-check" data-weight="1" id="chk-reuse" aria-describedby="chk-reuse-desc"/>
+            <span class="stk-check-custom" aria-hidden="true"></span>
+            <span class="stk-check-body">
+              <span class="stk-check-lbl">I never reuse passwords across sites</span>
+              <span class="stk-check-desc" id="chk-reuse-desc">Credential stuffing attacks use leaked passwords from one breach to attack other services</span>
+            </span>
+          </label>
+          <label class="stk-check-item">
+            <input type="checkbox" class="stk-check" data-weight="1" id="chk-passphrase" aria-describedby="chk-passphrase-desc"/>
+            <span class="stk-check-custom" aria-hidden="true"></span>
+            <span class="stk-check-body">
+              <span class="stk-check-lbl">I use passphrases or 16+ character passwords</span>
+              <span class="stk-check-desc" id="chk-passphrase-desc">Length beats complexity — "correct-horse-battery-staple" is stronger than "P@ss1!" and easier to remember</span>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <!-- ── TOOL 3: Security Headers Reference ── -->
+      <div class="stk-card stk-card--headers" id="stk-headers" aria-labelledby="stk-hdr-title">
+        <div class="stk-card__hd">
+          <span class="stk-card__hd-icon stk-icon--cyan" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <rect x="2" y="3" width="20" height="18" rx="2" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M6 8h8M6 12h12M6 16h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <div>
+            <h3 class="stk-card__title" id="stk-hdr-title">Security Headers Reference</h3>
+            <p class="stk-card__sub">Key HTTP response headers that harden any web application against common attacks</p>
+          </div>
+          <span class="stk-card__badge stk-badge--reference">Reference</span>
+        </div>
+
+        <div class="stk-headers-list">
+
+          <details class="stk-hdr-item stk-hdr-item--critical" open>
+            <summary class="stk-hdr-summary">
+              <span class="stk-hdr-dot stk-hdr-dot--critical" aria-hidden="true"></span>
+              <code class="stk-hdr-name">Content-Security-Policy</code>
+              <span class="stk-hdr-impact stk-hdr-impact--critical">Critical</span>
+              <svg class="stk-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M3 4.5l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </summary>
+            <div class="stk-hdr-body">
+              <p>Controls which resources (scripts, styles, images) can load on the page. Mitigates <strong>XSS</strong> and data injection attacks.</p>
+              <code class="stk-hdr-example">Content-Security-Policy: default-src 'self'; script-src 'self'</code>
+              <p class="stk-hdr-tip">ThreatLens sets: <code>default-src 'self'; style-src 'self' 'unsafe-inline'</code></p>
+            </div>
+          </details>
+
+          <details class="stk-hdr-item stk-hdr-item--high">
+            <summary class="stk-hdr-summary">
+              <span class="stk-hdr-dot stk-hdr-dot--high" aria-hidden="true"></span>
+              <code class="stk-hdr-name">Strict-Transport-Security</code>
+              <span class="stk-hdr-impact stk-hdr-impact--high">High</span>
+              <svg class="stk-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M3 4.5l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </summary>
+            <div class="stk-hdr-body">
+              <p>Forces browsers to use HTTPS for a set period — prevents <strong>SSL-stripping</strong> / downgrade attacks.</p>
+              <code class="stk-hdr-example">Strict-Transport-Security: max-age=63072000; includeSubDomains; preload</code>
+            </div>
+          </details>
+
+          <details class="stk-hdr-item stk-hdr-item--high">
+            <summary class="stk-hdr-summary">
+              <span class="stk-hdr-dot stk-hdr-dot--high" aria-hidden="true"></span>
+              <code class="stk-hdr-name">X-Frame-Options</code>
+              <span class="stk-hdr-impact stk-hdr-impact--high">High</span>
+              <svg class="stk-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M3 4.5l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </summary>
+            <div class="stk-hdr-body">
+              <p>Prevents the page from being embedded in <code>&lt;iframe&gt;</code> — blocks <strong>clickjacking</strong> attacks.</p>
+              <code class="stk-hdr-example">X-Frame-Options: DENY</code>
+            </div>
+          </details>
+
+          <details class="stk-hdr-item stk-hdr-item--medium">
+            <summary class="stk-hdr-summary">
+              <span class="stk-hdr-dot stk-hdr-dot--medium" aria-hidden="true"></span>
+              <code class="stk-hdr-name">X-Content-Type-Options</code>
+              <span class="stk-hdr-impact stk-hdr-impact--medium">Medium</span>
+              <svg class="stk-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M3 4.5l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </summary>
+            <div class="stk-hdr-body">
+              <p>Prevents browsers from MIME-type sniffing — stops <strong>content injection</strong> via crafted file uploads.</p>
+              <code class="stk-hdr-example">X-Content-Type-Options: nosniff</code>
+            </div>
+          </details>
+
+          <details class="stk-hdr-item stk-hdr-item--medium">
+            <summary class="stk-hdr-summary">
+              <span class="stk-hdr-dot stk-hdr-dot--medium" aria-hidden="true"></span>
+              <code class="stk-hdr-name">Referrer-Policy</code>
+              <span class="stk-hdr-impact stk-hdr-impact--medium">Medium</span>
+              <svg class="stk-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M3 4.5l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </summary>
+            <div class="stk-hdr-body">
+              <p>Controls how much referrer information is included with requests — limits <strong>information leakage</strong> to third-party sites.</p>
+              <code class="stk-hdr-example">Referrer-Policy: strict-origin-when-cross-origin</code>
+            </div>
+          </details>
+
+          <details class="stk-hdr-item stk-hdr-item--medium">
+            <summary class="stk-hdr-summary">
+              <span class="stk-hdr-dot stk-hdr-dot--medium" aria-hidden="true"></span>
+              <code class="stk-hdr-name">Permissions-Policy</code>
+              <span class="stk-hdr-impact stk-hdr-impact--medium">Medium</span>
+              <svg class="stk-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M3 4.5l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </summary>
+            <div class="stk-hdr-body">
+              <p>Disables browser APIs (camera, microphone, geolocation) the site doesn't need — reduces <strong>API abuse attack surface</strong>.</p>
+              <code class="stk-hdr-example">Permissions-Policy: camera=(), microphone=(), geolocation=()</code>
+            </div>
+          </details>
+
+        </div>
+      </div>
+
+      <!-- ── TOOL 4: Session Security Monitor ── -->
+      <div class="stk-card stk-card--session" id="stk-session" aria-labelledby="stk-sess-title">
+        <div class="stk-card__hd">
+          <span class="stk-card__hd-icon stk-icon--green" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M12 8v5l3 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <div>
+            <h3 class="stk-card__title" id="stk-sess-title">Session Security Monitor</h3>
+            <p class="stk-card__sub">Live indicators of your browser's current security context</p>
+          </div>
+          <span class="stk-card__badge stk-badge--live">Live</span>
+        </div>
+
+        <!-- Overall posture gauge -->
+        <div class="stk-sess-gauge">
+          <div class="stk-sess-gauge__bar">
+            <div class="stk-sess-gauge__fill" id="stk-sess-fill"></div>
+          </div>
+          <span class="stk-sess-gauge__label" id="stk-sess-label" aria-live="polite">Evaluating…</span>
+        </div>
+
+        <!-- Indicators grid -->
+        <div class="stk-sess-grid" id="stk-sess-grid" aria-label="Session security indicators" aria-live="polite">
+
+          <div class="stk-sess-item" id="sess-https">
+            <div class="stk-sess-item__icon-wrap" aria-hidden="true">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                <rect x="3" y="11" width="18" height="11" rx="2" stroke="currentColor" stroke-width="1.8"/>
+                <path d="M7 11V7a5 5 0 0110 0v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="stk-sess-item__body">
+              <span class="stk-sess-item__name">HTTPS / Secure Connection</span>
+              <span class="stk-sess-item__val" id="sess-https-val">Checking…</span>
+            </div>
+            <span class="stk-sess-item__dot" id="sess-https-dot" aria-hidden="true"></span>
+          </div>
+
+          <div class="stk-sess-item" id="sess-dnt">
+            <div class="stk-sess-item__icon-wrap" aria-hidden="true">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/>
+                <path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="stk-sess-item__body">
+              <span class="stk-sess-item__name">Do Not Track Signal</span>
+              <span class="stk-sess-item__val" id="sess-dnt-val">Checking…</span>
+            </div>
+            <span class="stk-sess-item__dot" id="sess-dnt-dot" aria-hidden="true"></span>
+          </div>
+
+          <div class="stk-sess-item" id="sess-cookies">
+            <div class="stk-sess-item__icon-wrap" aria-hidden="true">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/>
+                <circle cx="9" cy="10" r="1.2" fill="currentColor"/>
+                <circle cx="14" cy="13" r="1.2" fill="currentColor"/>
+                <circle cx="11" cy="15" r="1" fill="currentColor"/>
+              </svg>
+            </div>
+            <div class="stk-sess-item__body">
+              <span class="stk-sess-item__name">Cookies Enabled</span>
+              <span class="stk-sess-item__val" id="sess-cookies-val">Checking…</span>
+            </div>
+            <span class="stk-sess-item__dot" id="sess-cookies-dot" aria-hidden="true"></span>
+          </div>
+
+          <div class="stk-sess-item" id="sess-js">
+            <div class="stk-sess-item__icon-wrap" aria-hidden="true">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                <rect x="2" y="3" width="20" height="18" rx="2" stroke="currentColor" stroke-width="1.8"/>
+                <path d="M8 12l3 3-3 3M13 18h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="stk-sess-item__body">
+              <span class="stk-sess-item__name">JavaScript Enabled</span>
+              <span class="stk-sess-item__val" id="sess-js-val">Active ✓</span>
+            </div>
+            <span class="stk-sess-item__dot stk-dot--green" id="sess-js-dot" aria-hidden="true"></span>
+          </div>
+
+          <div class="stk-sess-item" id="sess-storage">
+            <div class="stk-sess-item__icon-wrap" aria-hidden="true">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                <ellipse cx="12" cy="6" rx="9" ry="3" stroke="currentColor" stroke-width="1.8"/>
+                <path d="M3 6v6c0 1.66 4.03 3 9 3s9-1.34 9-3V6" stroke="currentColor" stroke-width="1.8"/>
+                <path d="M3 12v6c0 1.66 4.03 3 9 3s9-1.34 9-3v-6" stroke="currentColor" stroke-width="1.8"/>
+              </svg>
+            </div>
+            <div class="stk-sess-item__body">
+              <span class="stk-sess-item__name">LocalStorage Available</span>
+              <span class="stk-sess-item__val" id="sess-storage-val">Checking…</span>
+            </div>
+            <span class="stk-sess-item__dot" id="sess-storage-dot" aria-hidden="true"></span>
+          </div>
+
+          <div class="stk-sess-item" id="sess-protocol">
+            <div class="stk-sess-item__icon-wrap" aria-hidden="true">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2L2 7v10c0 6 4.5 10 10 11 5.5-1 10-5 10-11V7L12 2Z" stroke="currentColor" stroke-width="1.8"/>
+              </svg>
+            </div>
+            <div class="stk-sess-item__body">
+              <span class="stk-sess-item__name">Page Protocol</span>
+              <span class="stk-sess-item__val" id="sess-protocol-val">Checking…</span>
+            </div>
+            <span class="stk-sess-item__dot" id="sess-protocol-dot" aria-hidden="true"></span>
+          </div>
+
+        </div>
+
+        <p class="stk-sess-note">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <circle cx="8" cy="8" r="6.5" stroke="#8b5cf6" stroke-width="1.4"/>
+            <path d="M8 7v4M8 5.5v.5" stroke="#8b5cf6" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+          All checks run locally in your browser. No data transmitted.
+        </p>
+      </div>
+
+      <!-- ── TOOL 5: Hash Generator ── -->
+      <div class="stk-card stk-card--hash" id="stk-hash" aria-labelledby="stk-hash-title">
+        <div class="stk-card__hd">
+          <span class="stk-card__hd-icon stk-icon--amber" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              <path d="M9 4v16M15 4v16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <div>
+            <h3 class="stk-card__title" id="stk-hash-title">Hash Generator</h3>
+            <p class="stk-card__sub">Generate SHA-256 / SHA-512 / SHA-1 / MD5-style hashes from any text — runs entirely in your browser via Web Crypto</p>
+          </div>
+          <span class="stk-card__badge stk-badge--client">Client-Side Only</span>
+        </div>
+
+        <div class="stk-hash-wrap">
+          <textarea
+            id="stk-hash-input"
+            class="stk-textarea"
+            placeholder="Paste any text to hash…"
+            rows="3"
+            spellcheck="false"
+            aria-label="Text to hash"
+            maxlength="50000"
+          ></textarea>
+
+          <div class="stk-hash-algo-row" role="group" aria-label="Choose hash algorithm">
+            <button type="button" class="stk-algo-btn active" data-algo="SHA-256">SHA-256</button>
+            <button type="button" class="stk-algo-btn" data-algo="SHA-512">SHA-512</button>
+            <button type="button" class="stk-algo-btn" data-algo="SHA-1">SHA-1</button>
+          </div>
+
+          <div class="stk-hash-output-wrap">
+            <label class="stk-hash-output-label" for="stk-hash-output">Hash Output</label>
+            <div class="stk-hash-output-row">
+              <output id="stk-hash-output" class="stk-hash-output" aria-live="polite" aria-label="Hash result">—</output>
+              <button type="button" class="stk-copy-btn" id="stk-hash-copy" aria-label="Copy hash to clipboard">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M8 17H5a2 2 0 01-2-2V5a2 2 0 012-2h10a2 2 0 012 2v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                  <rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="1.8"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="stk-hash-meta" id="stk-hash-meta" aria-live="polite">
+            <span id="stk-hash-algo-lbl">SHA-256</span>
+            <span id="stk-hash-len">—</span>
+            <span id="stk-hash-bits">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TOOL 6: Base64 / URL Decoder ── -->
+      <div class="stk-card stk-card--decoder" id="stk-decoder" aria-labelledby="stk-dec-title">
+        <div class="stk-card__hd">
+          <span class="stk-card__hd-icon stk-icon--red" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M10 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V9l-6-6z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+              <path d="M10 3v6h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M8 13h8M8 17h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <div>
+            <h3 class="stk-card__title" id="stk-dec-title">Payload Decoder</h3>
+            <p class="stk-card__sub">Decode Base64 and percent-encoded URL payloads — unmask obfuscated phishing links and email attachments</p>
+          </div>
+          <span class="stk-card__badge stk-badge--client">Client-Side Only</span>
+        </div>
+
+        <div class="stk-dec-wrap">
+          <div class="stk-dec-mode-row" role="group" aria-label="Decode mode">
+            <button type="button" class="stk-algo-btn active" data-mode="base64" id="dec-mode-b64">Base64 Decode</button>
+            <button type="button" class="stk-algo-btn" data-mode="urldecode" id="dec-mode-url">URL Decode</button>
+            <button type="button" class="stk-algo-btn" data-mode="base64encode" id="dec-mode-b64enc">Base64 Encode</button>
+          </div>
+
+          <textarea
+            id="stk-dec-input"
+            class="stk-textarea"
+            placeholder="Paste Base64 or %xx-encoded string here…"
+            rows="3"
+            spellcheck="false"
+            aria-label="Encoded payload to decode"
+            maxlength="50000"
+          ></textarea>
+
+          <div class="stk-dec-output-wrap">
+            <div class="stk-hash-output-row">
+              <output id="stk-dec-output" class="stk-hash-output stk-dec-output" aria-live="polite" aria-label="Decoded result">—</output>
+              <button type="button" class="stk-copy-btn" id="stk-dec-copy" aria-label="Copy decoded output">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M8 17H5a2 2 0 01-2-2V5a2 2 0 012-2h10a2 2 0 012 2v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                  <rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="1.8"/>
+                </svg>
+              </button>
+            </div>
+            <p class="stk-dec-status" id="stk-dec-status" aria-live="polite"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TOOL 7: Email Header Analyser ── -->
+      <div class="stk-card stk-card--email" id="stk-email" aria-labelledby="stk-email-title">
+        <div class="stk-card__hd">
+          <span class="stk-card__hd-icon stk-icon--violet" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M2 7l10 7 10-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <div>
+            <h3 class="stk-card__title" id="stk-email-title">Email Header Analyser</h3>
+            <p class="stk-card__sub">Paste raw email headers to detect spoofing, trace routing hops, and check SPF/DKIM/DMARC status</p>
+          </div>
+          <span class="stk-card__badge stk-badge--client">Client-Side Only</span>
+        </div>
+
+        <div class="stk-email-wrap">
+          <textarea
+            id="stk-email-input"
+            class="stk-textarea stk-textarea--tall"
+            placeholder="Paste raw email headers here…&#10;(From:, Received:, Authentication-Results:, DKIM-Signature: etc.)"
+            rows="5"
+            spellcheck="false"
+            aria-label="Raw email headers"
+            maxlength="100000"
+          ></textarea>
+          <button type="button" class="stk-action-btn" id="stk-email-analyze">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+            Analyse Headers
+          </button>
+
+          <div id="stk-email-results" class="stk-email-results" aria-live="polite" hidden>
+
+            <!-- Verdict banner -->
+            <div class="stk-email-verdict" id="stk-email-verdict"></div>
+
+            <!-- Findings list -->
+            <ul class="stk-email-findings" id="stk-email-findings" aria-label="Header analysis findings"></ul>
+
+            <!-- Routing hops -->
+            <div class="stk-email-section">
+              <p class="stk-email-section__title">Routing Hops</p>
+              <ol class="stk-email-hops" id="stk-email-hops" aria-label="Email routing path"></ol>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /.stk-grid -->
+
+    <!-- ── AUTHENTICATION ATTACK TYPES REFERENCE ── -->
+    <div class="stk-attacks-row">
+      <div class="stk-attacks-hd">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 3L2 20h20L12 3Z" stroke="#ef4444" stroke-width="1.8" stroke-linejoin="round"/>
+          <path d="M12 9v5M12 17v.5" stroke="#ef4444" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        <h3 class="stk-attacks-hd__title">Common Authentication Attacks</h3>
+        <p class="stk-attacks-hd__sub">Know your adversary — these are the most frequent methods attackers use to compromise accounts</p>
+      </div>
+      <div class="stk-attacks-grid">
+        <div class="stk-attack-card stk-attack-card--red">
+          <div class="stk-attack-card__top">
+            <span class="stk-attack-num">01</span>
+            <span class="stk-attack-severity stk-sev--critical">Critical</span>
+          </div>
+          <h4 class="stk-attack-name">Phishing / Credential Harvesting</h4>
+          <p class="stk-attack-desc">Fake login pages mimic legitimate sites to steal usernames and passwords. URL analysis (this tool!) is your first line of defense.</p>
+          <div class="stk-attack-mitigations">
+            <span class="stk-mitigation">Use a password manager (auto-fills only real domains)</span>
+            <span class="stk-mitigation">Enable phishing-resistant MFA (FIDO2)</span>
+          </div>
+        </div>
+        <div class="stk-attack-card stk-attack-card--orange">
+          <div class="stk-attack-card__top">
+            <span class="stk-attack-num">02</span>
+            <span class="stk-attack-severity stk-sev--high">High</span>
+          </div>
+          <h4 class="stk-attack-name">Credential Stuffing</h4>
+          <p class="stk-attack-desc">Attackers take leaked username/password pairs from one breach and automatically try them across hundreds of other services.</p>
+          <div class="stk-attack-mitigations">
+            <span class="stk-mitigation">Unique password per service</span>
+            <span class="stk-mitigation">Enable login anomaly alerts</span>
+          </div>
+        </div>
+        <div class="stk-attack-card stk-attack-card--amber">
+          <div class="stk-attack-card__top">
+            <span class="stk-attack-num">03</span>
+            <span class="stk-attack-severity stk-sev--high">High</span>
+          </div>
+          <h4 class="stk-attack-name">SIM-Swap Attack</h4>
+          <p class="stk-attack-desc">Attacker convinces your carrier to transfer your number to their SIM, intercepting all SMS-based 2FA codes in real time.</p>
+          <div class="stk-attack-mitigations">
+            <span class="stk-mitigation">Switch from SMS 2FA to TOTP app</span>
+            <span class="stk-mitigation">Add carrier account PIN</span>
+          </div>
+        </div>
+        <div class="stk-attack-card stk-attack-card--violet">
+          <div class="stk-attack-card__top">
+            <span class="stk-attack-num">04</span>
+            <span class="stk-attack-severity stk-sev--medium">Medium</span>
+          </div>
+          <h4 class="stk-attack-name">MFA Fatigue / Push Bombing</h4>
+          <p class="stk-attack-desc">Attackers who already have your password send dozens of push MFA notifications hoping you'll approve one out of frustration.</p>
+          <div class="stk-attack-mitigations">
+            <span class="stk-mitigation">Enable number matching in your MFA app</span>
+            <span class="stk-mitigation">Report unexpected pushes immediately</span>
+          </div>
+        </div>
+        <div class="stk-attack-card stk-attack-card--blue">
+          <div class="stk-attack-card__top">
+            <span class="stk-attack-num">05</span>
+            <span class="stk-attack-severity stk-sev--medium">Medium</span>
+          </div>
+          <h4 class="stk-attack-name">Brute Force / Dictionary Attack</h4>
+          <p class="stk-attack-desc">Automated tools try millions of common passwords or words until one matches — especially effective against short or simple passwords.</p>
+          <div class="stk-attack-mitigations">
+            <span class="stk-mitigation">Use 16+ character passphrases</span>
+            <span class="stk-mitigation">Enable account lockout policies</span>
+          </div>
+        </div>
+        <div class="stk-attack-card stk-attack-card--cyan">
+          <div class="stk-attack-card__top">
+            <span class="stk-attack-num">06</span>
+            <span class="stk-attack-severity stk-sev--medium">Medium</span>
+          </div>
+          <h4 class="stk-attack-name">Session Hijacking</h4>
+          <p class="stk-attack-desc">An attacker steals your active session cookie — often via XSS, public Wi-Fi sniffing, or malware — and impersonates you without needing your password.</p>
+          <div class="stk-attack-mitigations">
+            <span class="stk-mitigation">Always use HTTPS (check padlock)</span>
+            <span class="stk-mitigation">Log out on shared devices</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── HOW IT WORKS ── -->
+    <div class="db-section-hd" id="how-it-works">
+      <span class="db-section-hd__title">How It Works</span>
+      <span class="db-section-hd__line" aria-hidden="true"></span>
+    </div>
+
+    <section class="db-steps-section" aria-labelledby="hiw-title">
+      <h2 class="visually-hidden" id="hiw-title">How ThreatLens Works</h2>
+      <div class="db-steps-grid">
+        <div class="db-step-card">
+          <div class="db-step-num" aria-hidden="true">01</div>
+          <h3 class="db-step-title">Submit URL</h3>
+          <p class="db-step-body">Paste any absolute URL. The server validates the format, strips whitespace, and normalises the scheme — no network request to the target is ever made.</p>
+        </div>
+        <div class="db-step-card">
+          <div class="db-step-num" aria-hidden="true">02</div>
+          <h3 class="db-step-title">Parse Structure</h3>
+          <p class="db-step-body">The URL is parsed into scheme, authority, hostname, port, path, query, and fragment components for targeted rule evaluation.</p>
+        </div>
+        <div class="db-step-card">
+          <div class="db-step-num" aria-hidden="true">03</div>
+          <h3 class="db-step-title">17 Rules Fire</h3>
+          <p class="db-step-body">IP hosts, punycode, Unicode homographs, suspicious TLDs, brand impersonation, encoded keywords, @ tricks, shorteners, and more.</p>
+        </div>
+        <div class="db-step-card">
+          <div class="db-step-num" aria-hidden="true">04</div>
+          <h3 class="db-step-title">Explainable Result</h3>
+          <p class="db-step-body">You receive a 0–100 score, risk tier, and plain-English explanation for every triggered rule — so you understand exactly what was found.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── THREAT INTELLIGENCE / SECURITY TIPS ── -->
+    <div class="db-section-hd" id="threat-intel">
+      <span class="db-section-hd__title">Threat Intelligence</span>
+      <span class="db-section-hd__line" aria-hidden="true"></span>
+    </div>
+
+    <div class="db-bottom-row" id="features">
+
+      <div class="db-info-card db-info-card--blue">
+        <div class="db-info-card__hd">
+          <span class="db-info-card__icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L2 7v10c0 6 4.5 10 10 11 5.5-1 10-5 10-11V7L12 2Z" stroke="#00e5ff" stroke-width="1.8"/>
+            </svg>
+          </span>
+          <h3 class="db-info-card__title">Safety Checklist</h3>
+        </div>
+        <ul class="db-check-list">
+          <li>Verify the URL before clicking</li>
+          <li>Look for HTTPS padlock 🔒</li>
+          <li>Check for typosquatting tricks</li>
+          <li>Never share credentials via links</li>
+          <li>When in doubt — don't click</li>
+        </ul>
+        <a href="#how-it-works" class="db-info-card__link">Learn how →</a>
+      </div>
+
+      <div class="db-info-card db-info-card--red">
+        <div class="db-info-card__hd">
+          <span class="db-info-card__icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M12 3L2 20h20L12 3Z" stroke="#ef4444" stroke-width="1.8" stroke-linejoin="round"/>
+              <path d="M12 9v5M12 17v.5" stroke="#ef4444" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <h3 class="db-info-card__title">Common Red Flags</h3>
+        </div>
+        <ul class="db-cross-list">
+          <li>Fake login pages</li>
+          <li>URL shorteners hiding the dest</li>
+          <li>Suspicious subdomains</li>
+          <li>IP addresses as domain</li>
+          <li>Unusual ports or @-symbols</li>
+        </ul>
+        <a href="#scanner" class="db-info-card__link">Scan a URL →</a>
+      </div>
+
+      <div class="db-info-card db-info-card--cyan">
+        <div class="db-info-card__hd">
+          <span class="db-info-card__icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z" stroke="#00e5ff" stroke-width="1.8" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <h3 class="db-info-card__title">Detection Engine</h3>
+        </div>
+        <ul class="db-check-list">
+          <li>17 independent heuristic rules</li>
+          <li>IP address detection</li>
+          <li>Punycode &amp; homograph checks</li>
+          <li>Brand impersonation patterns</li>
+          <li>URL shortener detection</li>
+        </ul>
+        <a href="#scanner" class="db-info-card__link">Try it now →</a>
+      </div>
+
+    </div>
+
+    <!-- ── FEATURES GRID ── -->
+    <section class="section db-features-section" aria-labelledby="feat-title">
+      <div class="section-hd">
+        <h2 class="section-title" id="feat-title">Built for Security Awareness</h2>
+        <p class="section-sub">Every design decision prioritises safety, transparency, and user education.</p>
+      </div>
+      <div class="features">
+        <div class="feature card">
+          <div class="feature__icon" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7v10c0 6 4.5 10 10 11 5.5-1 10-5 10-11V7L12 2Z" stroke="url(#f1g)" stroke-width="1.7"/><defs><linearGradient id="f1g" x1="0" y1="0" x2="24" y2="24"><stop stop-color="#00e5ff"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs></svg>
+          </div>
+          <h3 class="feature__title">No URL Fetching</h3>
+          <p class="feature__body">The engine never visits, fetches, or resolves submitted URLs. Analysis is purely string-based, eliminating SSRF risk entirely.</p>
+        </div>
+        <div class="feature card">
+          <div class="feature__icon" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="url(#f2g)" stroke-width="1.7"/><path d="M12 7v5l3 3" stroke="url(#f2g)" stroke-width="1.7" stroke-linecap="round"/><defs><linearGradient id="f2g" x1="0" y1="0" x2="24" y2="24"><stop stop-color="#00e5ff"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs></svg>
+          </div>
+          <h3 class="feature__title">Explainable Scoring</h3>
+          <p class="feature__body">Each of 17 rules carries a documented weight. Every triggered rule shows a plain-English explanation so you can learn, not just click.</p>
+        </div>
+        <div class="feature card">
+          <div class="feature__icon" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="3" stroke="url(#f3g)" stroke-width="1.7"/><path d="M7 9h10M7 13h6" stroke="url(#f3g)" stroke-width="1.7" stroke-linecap="round"/><defs><linearGradient id="f3g" x1="0" y1="0" x2="24" y2="24"><stop stop-color="#00e5ff"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs></svg>
+          </div>
+          <h3 class="feature__title">Zero Data Storage</h3>
+          <p class="feature__body">No URL, no IP address, no session data is stored. The analysis runs entirely in memory and is discarded immediately.</p>
+        </div>
+        <div class="feature card">
+          <div class="feature__icon" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4" stroke="url(#f4g)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="9" stroke="url(#f4g)" stroke-width="1.7"/><defs><linearGradient id="f4g" x1="0" y1="0" x2="24" y2="24"><stop stop-color="#00e5ff"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs></svg>
+          </div>
+          <h3 class="feature__title">HTTPS Caveat Aware</h3>
+          <p class="feature__body">ThreatLens explicitly tells you HTTPS doesn't equal safe. Phishing sites routinely obtain valid TLS certificates.</p>
+        </div>
+        <div class="feature card">
+          <div class="feature__icon" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 3C7 3 3 7 3 12s4 9 9 9 9-4 9-9" stroke="url(#f5g)" stroke-width="1.7" stroke-linecap="round"/><path d="M16 3l5 5-5 5" stroke="url(#f5g)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><defs><linearGradient id="f5g" x1="0" y1="0" x2="24" y2="24"><stop stop-color="#00e5ff"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs></svg>
+          </div>
+          <h3 class="feature__title">Rate-Limited API</h3>
+          <p class="feature__body">Flask-Limiter restricts requests per IP. Security headers (CSP, X-Frame-Options, nosniff) are applied to every response.</p>
+        </div>
+        <div class="feature card">
+          <div class="feature__icon" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 4h16v12H4z" stroke="url(#f6g)" stroke-width="1.7"/><path d="M8 20h8M12 16v4" stroke="url(#f6g)" stroke-width="1.7" stroke-linecap="round"/><defs><linearGradient id="f6g" x1="0" y1="0" x2="24" y2="24"><stop stop-color="#00e5ff"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs></svg>
+          </div>
+          <h3 class="feature__title">Fully Responsive</h3>
+          <p class="feature__body">Mobile-first CSS scales from 320 px to wide monitors. Keyboard navigation, visible focus rings, and ARIA labels throughout.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── PRIVACY & ABOUT ── -->
+    <section class="section section--alt" aria-labelledby="priv-h2">
+      <div class="container">
+        <div class="section-hd">
+          <h2 class="section-title" id="priv-h2">Privacy &amp; Limitations</h2>
+          <p class="section-sub">ThreatLens is an educational heuristic tool, not a definitive threat oracle.</p>
+        </div>
+        <div class="priv-grid">
+          <div class="priv-block card">
+            <h3 class="priv-block__title">What ThreatLens Does</h3>
+            <ul class="check-list">
+              <li>Parses URL structure with stdlib only — no network calls</li>
+              <li>Evaluates 17 independent string-based heuristic rules</li>
+              <li>Returns an explainable, weighted 0–100 risk score</li>
+              <li>Strips credential userinfo before display</li>
+              <li>Communicates clearly that HTTPS ≠ safe</li>
+            </ul>
+          </div>
+          <div class="priv-block card">
+            <h3 class="priv-block__title">What ThreatLens Does NOT Do</h3>
+            <ul class="cross-list">
+              <li>Visit, fetch, or resolve submitted URLs</li>
+              <li>Consult threat databases or blocklists</li>
+              <li>Store submitted URLs or user data</li>
+              <li>Guarantee a URL is malicious or safe</li>
+              <li>Replace professional security tooling</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── FOOTER ── -->
+    <footer class="db-footer" role="contentinfo">
+      <span>Threat<span class="db-accent">Lens</span></span>
+      <span class="db-footer__sep" aria-hidden="true">·</span>
+      <span>See Every Threat. Clearly.</span>
+      <span class="db-footer__sep" aria-hidden="true">·</span>
+      <span>Cybersecurity Project · B.Tech Year 1</span>
+      <span class="db-footer__sep" aria-hidden="true">·</span>
+      <a href="/api/health" class="db-footer__link">API Status</a>
+      <span class="db-footer__sep" aria-hidden="true">·</span>
+      <span class="db-footer__ver">v2.0</span>
+    </footer>
+
+  </div><!-- /.db-scroll -->
+</div><!-- /.db-main -->
+
+<!-- Sidebar overlay (mobile) -->
+<div class="db-overlay" id="db-overlay" aria-hidden="true"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     CHINTU — Floating AI Assistant
+     Floats bottom-right, draggable, minimisable, full chat interface.
+     Runs 100% client-side — no API calls, no data leaves the browser.
+════════════════════════════════════════════════════════════════════════ -->
+<div id="chintu-bubble" class="chintu-bubble" aria-label="Open Chintu AI assistant" role="button" tabindex="0" aria-expanded="false">
+  <div class="chintu-bubble__ring" aria-hidden="true"></div>
+  <div class="chintu-bubble__avatar" aria-hidden="true">
+    <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <linearGradient id="cg1" x1="0" y1="0" x2="40" y2="40">
+          <stop stop-color="#00e5ff"/><stop offset="1" stop-color="#8b5cf6"/>
+        </linearGradient>
+      </defs>
+      <!-- robot head -->
+      <rect x="8" y="10" width="24" height="20" rx="5" fill="url(#cg1)"/>
+      <!-- eyes -->
+      <circle cx="15" cy="18" r="3" fill="#04060d"/>
+      <circle cx="25" cy="18" r="3" fill="#04060d"/>
+      <circle cx="16" cy="17" r="1" fill="#00e5ff"/>
+      <circle cx="26" cy="17" r="1" fill="#00e5ff"/>
+      <!-- mouth -->
+      <path d="M14 24 Q20 28 26 24" stroke="#04060d" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+      <!-- antenna -->
+      <line x1="20" y1="10" x2="20" y2="5" stroke="url(#cg1)" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="20" cy="4" r="2" fill="#00e5ff"/>
+      <!-- ears -->
+      <rect x="4" y="15" width="4" height="8" rx="2" fill="url(#cg1)"/>
+      <rect x="32" y="15" width="4" height="8" rx="2" fill="url(#cg1)"/>
+    </svg>
+  </div>
+  <span class="chintu-bubble__label" aria-hidden="true">Chintu</span>
+  <span class="chintu-bubble__notif" id="chintu-notif" aria-hidden="true" hidden>1</span>
+</div>
+
+<div id="chintu-panel" class="chintu-panel" role="dialog" aria-modal="true" aria-labelledby="chintu-title" hidden>
+
+  <!-- Header -->
+  <div class="chintu-header" id="chintu-drag-handle">
+    <div class="chintu-header__left">
+      <div class="chintu-avatar-sm" aria-hidden="true">
+        <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs><linearGradient id="cg2" x1="0" y1="0" x2="40" y2="40"><stop stop-color="#00e5ff"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs>
+          <rect x="8" y="10" width="24" height="20" rx="5" fill="url(#cg2)"/>
+          <circle cx="15" cy="18" r="3" fill="#04060d"/>
+          <circle cx="25" cy="18" r="3" fill="#04060d"/>
+          <circle cx="16" cy="17" r="1" fill="#00e5ff"/>
+          <circle cx="26" cy="17" r="1" fill="#00e5ff"/>
+          <path d="M14 24 Q20 28 26 24" stroke="#04060d" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+          <line x1="20" y1="10" x2="20" y2="5" stroke="url(#cg2)" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="20" cy="4" r="2" fill="#00e5ff"/>
+          <rect x="4" y="15" width="4" height="8" rx="2" fill="url(#cg2)"/>
+          <rect x="32" y="15" width="4" height="8" rx="2" fill="url(#cg2)"/>
+        </svg>
+      </div>
+      <div class="chintu-header__info">
+        <p class="chintu-header__name" id="chintu-title">Chintu</p>
+        <p class="chintu-header__status">
+          <span class="chintu-status-dot" aria-hidden="true"></span>
+          AI Security Assistant
+        </p>
+      </div>
+    </div>
+    <div class="chintu-header__actions">
+      <button type="button" class="chintu-hdr-btn" id="chintu-clear-btn" aria-label="Clear chat history" title="Clear chat">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button type="button" class="chintu-hdr-btn" id="chintu-min-btn" aria-label="Minimise Chintu" title="Minimise">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+      <button type="button" class="chintu-hdr-btn chintu-hdr-btn--close" id="chintu-close-btn" aria-label="Close Chintu" title="Close">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Quick-topic pills -->
+  <div class="chintu-topics" id="chintu-topics" aria-label="Quick topics">
+    <button type="button" class="chintu-topic-pill" data-topic="What is phishing?">Phishing?</button>
+    <button type="button" class="chintu-topic-pill" data-topic="How does ThreatLens score a URL?">How scoring works</button>
+    <button type="button" class="chintu-topic-pill" data-topic="What is HTTPS and is it safe?">HTTPS &amp; safety</button>
+    <button type="button" class="chintu-topic-pill" data-topic="How to spot a fake login page?">Fake login pages</button>
+    <button type="button" class="chintu-topic-pill" data-topic="What is two-factor authentication?">2FA explained</button>
+    <button type="button" class="chintu-topic-pill" data-topic="What is a punycode attack?">Punycode attack</button>
+  </div>
+
+  <!-- Messages -->
+  <div class="chintu-messages" id="chintu-messages" role="log" aria-live="polite" aria-label="Chat with Chintu"></div>
+
+  <!-- Typing indicator -->
+  <div class="chintu-typing" id="chintu-typing" hidden aria-label="Chintu is typing" aria-live="polite">
+    <div class="chintu-typing__avatar" aria-hidden="true">C</div>
+    <div class="chintu-typing__dots" aria-hidden="true">
+      <span></span><span></span><span></span>
+    </div>
+  </div>
+
+  <!-- Input bar -->
+  <div class="chintu-input-bar">
+    <textarea
+      id="chintu-input"
+      class="chintu-input"
+      placeholder="Ask Chintu anything about cybersecurity…"
+      rows="1"
+      maxlength="1000"
+      aria-label="Message to Chintu"
+      autocomplete="off"
+      spellcheck="true"
+    ></textarea>
+    <button type="button" id="chintu-send-btn" class="chintu-send-btn" aria-label="Send message">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M22 2L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M22 2L15 22 11 13 2 9l20-7z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </div>
+
+  <p class="chintu-footer-note">Chintu · ThreatLens AI · Runs in your browser · No data sent anywhere</p>
+</div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dashboard-ui.js') }}"></script>
+</body>
+</html>

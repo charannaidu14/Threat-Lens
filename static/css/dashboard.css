@@ -1,0 +1,3 @@
+﻿body { background: #060b14; color: #e5eefb; }
+.db-body { position: relative; }
+.risk-badge, .result-score, .score-ring-fill, .metric-card, .recommendation-item { transition: all .2s ease; }
